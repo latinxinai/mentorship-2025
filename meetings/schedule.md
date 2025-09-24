@@ -6,86 +6,72 @@
 
 ## Key Dates
 
-### January 2025
-- **January 15**: Program Kickoff Meeting
-  - Time: 6:00 PM - 7:30 PM EST
-  - Format: Virtual (Zoom)
+### September 2025
+- **September 25**: Program Kickoff Meeting
+  - Time: 1:00 PM - 2:00 PM CST
+  - Format: Virtual (Google Meet)
   - Agenda: Program overview, introductions, expectations
 
-- **January 22**: Mentor-Mentee Matching Complete
-- **January 29**: First Mentor-Mentee Meetings Begin
+- **September 22**: Mentor-Mentee Matching Complete
+- **September 22-**: First Mentor-Mentee Meetings Begin
 
-### February 2025
-- **February 12**: Technical Workshop #1
+### October 2025
+- **October 09**: Technical Workshop #1
   - Topic: "Setting Up Your AI/ML Development Environment"
-  - Time: 6:00 PM - 7:30 PM EST
+  - Time: 1:00 PM - 2:00 PM CST
 
-- **February 26**: Project Planning Session
-  - Time: 6:00 PM - 7:00 PM EST
-  - Focus: Defining project goals and timelines
+- **October 16**: Project Planning and Milestone Review
+  - Time: 1:00 PM - 2:00 PM CST
+  - Focus: Reviewing project goals and timelines
 
-### March 2025
-- **March 12**: Technical Workshop #2
+- **October 23**: Technical Workshop #2
   - Topic: "Data Science Fundamentals"
-  - Time: 6:00 PM - 7:30 PM EST
+  - Time: 1:00 PM - 2:00 PM CST
 
-- **March 26**: Mid-Program Check-in
-  - Time: 6:00 PM - 7:30 PM EST
-  - Format: Virtual networking and progress sharing
-
-### April 2025
-- **April 9**: Technical Workshop #3
-  - Topic: "Machine Learning Model Development"
-  - Time: 6:00 PM - 7:30 PM EST
-
-- **April 23**: Project Milestone Review
-  - Time: 6:00 PM - 7:00 PM EST
+### November 2025
+- **November 06**: Project Milestone Review
+  - Time: 1:00 PM - 2:00 PM CST
   - Format: Small group presentations
 
-### May 2025
-- **May 14**: Technical Workshop #4
-  - Topic: "AI Ethics and Responsible Development"
-  - Time: 6:00 PM - 7:30 PM EST
+- **November 13**: Technical Workshop #3
+  - Topic: TBD
+  - Time: 1:00 PM - 2:00 PM CST
 
-- **May 28**: Final Project Preparation
-  - Time: 6:00 PM - 7:00 PM EST
+- **November 20**: Final Project Preparation
+  - Time: 1:00 PM - 2:00 PM CST
   - Focus: Presentation skills and feedback
 
-### June 2025
-- **June 11**: Final Project Presentations
-  - Time: 6:00 PM - 8:00 PM EST
+### December 2025
+- **December 4**: Final Project Presentations
+  - Time: 1:00 PM - 2:00 PM CST
   - Format: Public presentations (mentees present projects)
-
-- **June 18**: Program Graduation & Celebration
-  - Time: 6:00 PM - 8:00 PM EST
-  - Format: Recognition ceremony and networking
 
 ## Regular Meeting Expectations
 
 ### Mentor-Mentee Meetings
-- **Frequency**: Bi-weekly (minimum)
+- **Frequency**: Weekly (minimum)
 - **Duration**: 45-60 minutes
 - **Format**: Virtual or in-person (as agreed upon)
 - **Schedule**: Flexible, arranged between mentor and mentee
 
 ### Office Hours
-- **When**: Every Wednesday, 5:00 PM - 6:00 PM EST
+- **When**: Every Wednesday, 2:00 PM - 3:00 PM CST
 - **Format**: Drop-in virtual sessions
 - **Purpose**: Q&A, technical help, general support
 
 ## Meeting Resources
 
-- All virtual meetings will be held via Zoom (links provided separately)
+- All virtual meetings will be held via Google Meet (links provided separately)
 - Meeting recordings will be available for registered participants
 - Presentation slides and materials will be shared in the resources directory
 
 ## Time Zone Considerations
 
-All times listed are in Eastern Standard Time (EST). Participants in other time zones should convert accordingly. We will try to rotate meeting times occasionally to accommodate different time zones.
+All times listed are in Central Standard Time (CST). Participants in other time zones should convert accordingly. We will try to rotate meeting times occasionally to accommodate different time zones.
 
 ## Contact Information
 
-For scheduling questions or conflicts, please contact the program coordinators at [email to be provided].
+For scheduling questions or conflicts, please contact the program coordinators at felipe.lopes@latinxinai.org and ana@accel.ai.
 
 ## Calendar Integration
 
