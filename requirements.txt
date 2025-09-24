@@ -1,0 +1,17 @@
+# LatinX in AI Mentorship Program Requirements
+# Install with: pip install -r requirements.txt
+
+# Core dependencies
+requests>=2.25.0
+
+# Optional: For enhanced functionality
+python-dateutil>=2.8.0  # Better date parsing
+pyyaml>=5.4.0           # YAML config support (future enhancement)
+click>=8.0.0            # Better CLI interface (future enhancement)
+
+# Development dependencies (optional)
+# Uncomment for development work:
+# pytest>=6.0.0         # Testing framework
+# black>=21.0.0          # Code formatting
+# flake8>=3.9.0          # Linting
+# mypy>=0.910            # Type checking
