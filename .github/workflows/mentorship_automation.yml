@@ -1,4 +1,4 @@
-name: Mentorship Program Automation
+name: Mentorship Automation
 
 on:
   workflow_dispatch:
@@ -38,7 +38,6 @@ jobs:
     permissions:
       issues: write
       contents: write
-      projects: write
       pull-requests: write
 
     steps:
@@ -60,91 +59,12 @@ jobs:
         chmod +x scripts/manage_mentorship_projects.py
         chmod +x scripts/migrate_pairings_to_projects.py
 
-    - name: Create mentorship project
-      if: github.event.inputs.action == 'create-project' || github.event_name == 'schedule'
+    - name: Run Mentorship Script
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_TOKEN: ${{ secrets.GH_TOKEN }}  # Personal Access Token with 'repo' and 'projects' scopes
+        ACTION: ${{ github.event.inputs.action }}
+        PROJECT_TITLE: ${{ github.event.inputs.project_title }}
+        PAIRINGS_PATH: ${{ github.event.inputs.pairings_path }}
+        PAIR_DATA_FILE: ${{ github.event.inputs.pair_data_file }}
       run: |
-        python scripts/manage_mentorship_projects.py \
-          --owner ${{ github.repository_owner }} \
-          --repo ${{ github.event.repository.name }} \
-          --action create-project \
-          --project-title "${{ github.event.inputs.project_title || 'Mentorship 2025' }}"
-
-    - name: Migrate from pairings folder
-      if: github.event.inputs.action == 'migrate-pairings'
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        python scripts/migrate_pairings_to_projects.py \
-          --pairings-path "${{ github.event.inputs.pairings_path || 'pairings' }}" \
-          --owner ${{ github.repository_owner }} \
-          --repo ${{ github.event.repository.name }} \
-          --create-project \
-          --generate-folders
-
-    - name: Generate folder structure
-      if: github.event.inputs.action == 'generate-folders' && github.event.inputs.pair_data_file
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        python scripts/manage_mentorship_projects.py \
-          --owner ${{ github.repository_owner }} \
-          --repo ${{ github.event.repository.name }} \
-          --action generate-folders \
-          --pair-data "${{ github.event.inputs.pair_data_file }}"
-
-    - name: Process new mentorship issue
-      if: github.event_name == 'issues' && contains(github.event.issue.title, 'New Mentorship Pair')
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        echo "Processing new mentorship pair from issue #${{ github.event.issue.number }}"
-        # Parse issue body and create project card
-        python scripts/process_mentorship_issue.py \
-          --issue-number ${{ github.event.issue.number }} \
-          --owner ${{ github.repository_owner }} \
-          --repo ${{ github.event.repository.name }}
-
-    - name: Commit generated files
-      if: github.event.inputs.action == 'generate-folders' || github.event.inputs.action == 'migrate-pairings'
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add -A
-        if git diff --staged --quiet; then
-          echo "No changes to commit"
-        else
-          git commit -m "Auto-generated mentorship pair folders"
-          git push
-        fi
-
-    - name: Create summary comment
-      if: always() && github.event_name == 'workflow_dispatch'
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const action = '${{ github.event.inputs.action }}';
-          const success = '${{ job.status }}' === 'success';
-          
-          let message = success ? 
-            `✅ Mentorship automation completed successfully!\n\n**Action**: ${action}` :
-            `❌ Mentorship automation failed.\n\n**Action**: ${action}`;
-          
-          if (action === 'create-project') {
-            message += '\n\n🎯 **Next Steps:**\n- Check the newly created GitHub Project\n- Start adding mentor-mentee pairs as project cards';
-          } else if (action === 'migrate-pairings') {
-            message += '\n\n📁 **Migration Results:**\n- Check migration_report.md for details\n- Review generated folder structure\n- Verify project cards created';
-          }
-          
-          message += '\n\n📚 **Documentation**: See README.md for usage instructions.';
-          
-          // Create issue comment or discussion if this was triggered by an issue
-          if (context.payload.issue) {
-            github.rest.issues.createComment({
-              issue_number: context.payload.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: message
-            });
-          }
+        python scripts/manage_mentorship_projects.py
