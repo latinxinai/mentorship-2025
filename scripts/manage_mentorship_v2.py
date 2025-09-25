@@ -23,11 +23,33 @@ def get_repo_id(owner, repo, token):
     data = run_query(query, token)
     return data["data"]["repository"]["id"]
 
-def create_project(repo_id, title, token):
+def get_owner_id(owner, token):
+    """Get the GitHub ID for a user or organization."""
     query = f"""
+    {{
+      user(login: "{owner}") {{ id }}
+      organization(login: "{owner}") {{ id }}
+    }}
+    """
+    data = run_query(query, token)
+    if "errors" in data:
+        raise Exception(f"GraphQL error when fetching owner ID: {data['errors']}")
+    user_id = data.get("data", {}).get("user", {}).get("id")
+    org_id = data.get("data", {}).get("organization", {}).get("id")
+    if user_id:
+        return user_id
+    elif org_id:
+        return org_id
+    else:
+        raise Exception(f"Could not find user or organization with login '{owner}'")
+
+def create_project(owner, title, token):
+    """Create a GitHub Projects V2 project under the given owner (user/org)."""
+    owner_id = get_owner_id(owner, token)
+    mutation = f"""
     mutation {{
       createProjectV2(input: {{
-        ownerId: "{repo_id}",
+        ownerId: "{owner_id}",
         title: "{title}"
       }}) {{
         projectV2 {{
@@ -37,8 +59,13 @@ def create_project(repo_id, title, token):
       }}
     }}
     """
-    data = run_query(query, token)
-    return data["data"]["createProjectV2"]["projectV2"]
+    data = run_query(mutation, token)
+    if "errors" in data:
+        raise Exception(f"GraphQL error creating project: {data['errors']}")
+    project_v2 = data.get("data", {}).get("createProjectV2", {}).get("projectV2")
+    if not project_v2:
+        raise Exception(f"Failed to create project. Response: {data}")
+    return project_v2
 
 def create_item(project_id, title, token):
     mutation = f"""
