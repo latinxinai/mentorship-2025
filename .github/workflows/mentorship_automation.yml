@@ -79,37 +79,37 @@ jobs:
       - name: Create mentorship project
         if: ${{ github.event.inputs.action == 'create-project' || github.event_name == 'schedule' }}
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           python scripts/manage_mentorship_v2.py \
             --owner "$OWNER" \
             --repo "${{ github.event.repository.name }}" \
-            --token $GH_TOKEN \
+            --token $GITHUB_TOKEN \
             --action create-project \
             --project-title "${{ github.event.inputs.project_title }}"
 
       - name: Migrate from pairings folder
         if: ${{ github.event.inputs.action == 'migrate-pairings' }}
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           python scripts/migrate_pairings_to_projects.py \
             --pairings-path "${{ github.event.inputs.pairings_path }}" \
             --owner "$OWNER" \
             --repo "${{ github.event.repository.name }}" \
-            --token $GH_TOKEN \
+            --token $GITHUB_TOKEN \
             --create-project \
             --generate-folders
 
       - name: Generate folder structure
         if: ${{ github.event.inputs.action == 'generate-folders' && github.event.inputs.pair_data_file }}
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           python scripts/manage_mentorship_v2.py \
             --owner "$OWNER" \
             --repo "${{ github.event.repository.name }}" \
-            --token $GH_TOKEN \
+            --token $GITHUB_TOKEN \
             --action generate-folders \
             --project-title "${{ github.event.inputs.project_title }}" \
             --pair-data "${{ github.event.inputs.pair_data_file }}"
@@ -117,7 +117,7 @@ jobs:
       - name: Process new mentorship issue
         if: ${{ github.event_name == 'issues' && contains(github.event.issue.title, 'New Mentorship Pair') }}
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           python scripts/process_mentorship_issue.py \
             --issue-number ${{ github.event.issue.number }} \
