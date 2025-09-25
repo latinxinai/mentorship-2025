@@ -1,39 +1,37 @@
 name: Mentorship Program Automation
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
     inputs:
       owner:
         description: "Owner of the project (user or organization)"
         required: false
-        default: ${{ github.repository_owner }}
+        default: ""   # fallback to repo owner
+      project_title:
+        description: "Project title (for create-project)"
+        required: false
+        default: "Mentorship 2025"
       action:
-        description: 'Action to perform'
+        description: "Action to perform"
         required: true
-        default: 'create-project'
+        default: "create-project"
         type: choice
         options:
           - create-project
           - migrate-pairings
           - generate-folders
           - sync-projects
-      project_title:
-        description: 'Project title (for create-project)'
-        required: false
-        default: 'Mentorship 2025'
       pairings_path:
-        description: 'Path to pairings folder (for migration)'
+        description: "Path to pairings folder (for migration)"
         required: false
-        default: 'pairings'
+        default: "pairings"
       pair_data_file:
-        description: 'JSON file with pair data'
+        description: "JSON file with mentor-mentee pairs (for generate-folders)"
         required: false
+
   schedule:
-    # Run weekly sync on Sundays at 12:00 UTC
-    - cron: '0 12 * * 0'
+    - cron: '0 12 * * 0'  # weekly Sunday 12:00 UTC
+
   issues:
     types: [opened, edited]
 
@@ -52,7 +50,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: "3.9"
 
       - name: Install dependencies
         run: |
@@ -62,60 +60,69 @@ jobs:
       - name: Set up environment
         run: |
           chmod +x scripts/manage_mentorship_v2.py
-          chmod +x scripts/migrate_pairings_to_projects_v2.py
+          chmod +x scripts/migrate_pairings_to_projects.py
           chmod +x scripts/process_mentorship_issue.py
 
+      - name: Determine project owner
+        id: owner
+        run: |
+          if [ -z "${{ github.event.inputs.owner }}" ]; then
+            echo "OWNER=${GITHUB_REPOSITORY_OWNER}" >> $GITHUB_ENV
+          else
+            echo "OWNER=${{ github.event.inputs.owner }}" >> $GITHUB_ENV
+          fi
+          echo "Resolved project owner: $OWNER"
+
       - name: Create mentorship project
-        if: github.event.inputs.action == 'create-project' || github.event_name == 'schedule'
+        if: ${{ github.event.inputs.action == 'create-project' || github.event_name == 'schedule' }}
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           python scripts/manage_mentorship_v2.py \
-            --owner ${{ github.repository_owner }} \
-            --repo ${{ github.event.repository.name }} \
-            --token ${{ secrets.GH_TOKEN }} \
+            --owner "$OWNER" \
+            --repo "${{ github.event.repository.name }}" \
+            --token $GH_TOKEN \
             --action create-project \
-            --project-title "${{ github.event.inputs.project_title || 'Mentorship 2025' }}"
+            --project-title "${{ github.event.inputs.project_title }}"
 
       - name: Migrate from pairings folder
-        if: github.event.inputs.action == 'migrate-pairings'
+        if: ${{ github.event.inputs.action == 'migrate-pairings' }}
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-          python scripts/migrate_pairings_to_projects_v2.py \
-            --pairings-path "${{ github.event.inputs.pairings_path || 'pairings' }}" \
-            --owner ${{ github.repository_owner }} \
-            --repo ${{ github.event.repository.name }} \
-            --token ${{ secrets.GH_TOKEN }} \
+          python scripts/migrate_pairings_to_projects.py \
+            --pairings-path "${{ github.event.inputs.pairings_path }}" \
+            --owner "$OWNER" \
+            --repo "${{ github.event.repository.name }}" \
+            --token $GH_TOKEN \
             --create-project \
             --generate-folders
 
       - name: Generate folder structure
-        if: github.event.inputs.action == 'generate-folders' && github.event.inputs.pair_data_file
+        if: ${{ github.event.inputs.action == 'generate-folders' && github.event.inputs.pair_data_file }}
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           python scripts/manage_mentorship_v2.py \
-            --owner "${{ github.event.inputs.owner }}" \
+            --owner "$OWNER" \
             --repo "${{ github.event.repository.name }}" \
-            --token ${{ secrets.GH_TOKEN }} \
-            --action create-project \
-            --project-title "${{ github.event.inputs.project_title || 'Mentorship 2025' }}"
+            --token $GH_TOKEN \
+            --action generate-folders \
+            --project-title "${{ github.event.inputs.project_title }}" \
+            --pair-data "${{ github.event.inputs.pair_data_file }}"
 
       - name: Process new mentorship issue
-        if: github.event_name == 'issues' && contains(github.event.issue.title, 'New Mentorship Pair')
+        if: ${{ github.event_name == 'issues' && contains(github.event.issue.title, 'New Mentorship Pair') }}
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-          echo "Processing new mentorship pair from issue #${{ github.event.issue.number }}"
           python scripts/process_mentorship_issue.py \
             --issue-number ${{ github.event.issue.number }} \
-            --owner ${{ github.repository_owner }} \
-            --repo ${{ github.repository.name }} \
-            --token ${{ secrets.GH_TOKEN }}
+            --owner "$OWNER" \
+            --repo "${{ github.event.repository.name }}"
 
       - name: Commit generated files
-        if: contains(fromJSON('["generate-folders","migrate-pairings"]'), github.event.inputs.action)
+        if: ${{ github.event.inputs.action == 'generate-folders' || github.event.inputs.action == 'migrate-pairings' }}
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
@@ -125,6 +132,7 @@ jobs:
           else
             git commit -m "Auto-generated mentorship pair folders"
             git push
+          fi
 
       - name: Create summary comment
         if: always() && github.event_name == 'workflow_dispatch'
