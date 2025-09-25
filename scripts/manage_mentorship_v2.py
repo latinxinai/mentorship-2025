@@ -62,7 +62,7 @@ def main():
     parser.add_argument("--repo", required=True)
     parser.add_argument("--token", required=True)
     parser.add_argument("--project-title", required=True)
-    parser.add_argument("--pair-data", required=True, help="JSON file with mentor-mentee pairs")
+    parser.add_argument("--pair-data", required=False, help="JSON file with mentor-mentee pairs")
     args = parser.parse_args()
 
     token = args.token
