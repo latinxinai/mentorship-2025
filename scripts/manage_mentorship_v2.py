@@ -24,24 +24,37 @@ def get_repo_id(owner, repo, token):
     return data["data"]["repository"]["id"]
 
 def get_owner_id(owner, token):
-    """Get the GitHub ID for a user or organization."""
-    query = f"""
-    {{
-      user(login: "{owner}") {{ id }}
-      organization(login: "{owner}") {{ id }}
-    }}
     """
-    data = run_query(query, token)
+    Get the GraphQL ID of a GitHub user or organization.
+    Tries user first, then organization.
+    """
+    query = """
+    query($login: String!) {
+      user(login: $login) { id }
+      organization(login: $login) { id }
+    }
+    """
+    variables = {"login": owner}
+    data = run_query(query, token, variables)
+
     if "errors" in data:
-        raise Exception(f"GraphQL error when fetching owner ID: {data['errors']}")
+        # Filter out NOT_FOUND errors
+        errors = [e for e in data["errors"] if e["type"] != "NOT_FOUND"]
+        if errors:
+            raise Exception(f"GraphQL error when fetching owner ID: {errors}")
+
     user_id = data.get("data", {}).get("user", {}).get("id")
     org_id = data.get("data", {}).get("organization", {}).get("id")
+
     if user_id:
+        print(f"[DEBUG] Resolved owner '{owner}' as USER with ID {user_id}")
         return user_id
     elif org_id:
+        print(f"[DEBUG] Resolved owner '{owner}' as ORG with ID {org_id}")
         return org_id
     else:
-        raise Exception(f"Could not find user or organization with login '{owner}'")
+        raise Exception(f"Could not resolve owner ID for '{owner}'. Check spelling and token permissions.")
+
 
 def create_project(owner, title, token):
     """Create a GitHub Projects V2 project under the given owner (user/org)."""
