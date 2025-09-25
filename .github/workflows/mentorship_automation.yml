@@ -57,7 +57,7 @@ jobs:
 
       - name: Set up environment
         run: |
-          chmod +x scripts/manage_mentorship_projects.py
+          chmod +x scripts/manage_mentorship_v2.py
           chmod +x scripts/migrate_pairings_to_projects.py
           chmod +x scripts/process_mentorship_issue.py
 
@@ -66,7 +66,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-          python scripts/manage_mentorship_projects.py \
+          python scripts/manage_mentorship_v2.py \
             --owner ${{ github.repository_owner }} \
             --repo ${{ github.event.repository.name }} \
             --token ${{ secrets.GH_TOKEN }} \
