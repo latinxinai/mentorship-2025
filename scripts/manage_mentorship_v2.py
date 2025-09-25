@@ -62,17 +62,14 @@ def get_owner_id(owner, token):
     variables = {"login": owner}
     data = run_query(query, token, variables)
 
-    if data is None:
-        raise Exception("GraphQL returned None; check token and login")
+    if not data or "data" not in data:
+        raise Exception("GraphQL returned no data; check token and login")
 
-    if "errors" in data:
-        # ignore NOT_FOUND
-        other_errors = [e for e in data["errors"] if e.get("type") != "NOT_FOUND"]
-        if other_errors:
-            raise Exception(f"GraphQL errors: {other_errors}")
+    user_data = data["data"].get("user")
+    org_data = data["data"].get("organization")
 
-    user_id = data.get("data", {}).get("user", {}).get("id")
-    org_id = data.get("data", {}).get("organization", {}).get("id")
+    user_id = user_data.get("id") if user_data else None
+    org_id = org_data.get("id") if org_data else None
 
     if user_id:
         print(f"[INFO] Resolved owner '{owner}' as USER")
@@ -81,10 +78,8 @@ def get_owner_id(owner, token):
         print(f"[INFO] Resolved owner '{owner}' as ORG")
         return org_id
     else:
-        # fallback to authenticated user
-        fallback = get_authenticated_user(token)
-        print(f"[WARNING] Could not resolve owner '{owner}', falling back to '{fallback}'")
-        return get_owner_id(fallback, token)
+        raise Exception(f"Could not resolve owner '{owner}'. GraphQL errors: {data.get('errors')}")
+
 
 def create_project(owner, title, token):
     owner_id = get_owner_id(owner, token)
