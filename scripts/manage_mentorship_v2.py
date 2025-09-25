@@ -6,17 +6,16 @@ import requests
 GITHUB_API = "https://api.github.com/graphql"
 
 def run_query(query, token, variables=None):
-    """
-    Execute a GitHub GraphQL query.
-    """
     url = "https://api.github.com/graphql"
     headers = {"Authorization": f"bearer {token}"}
-    json_payload = {"query": query}
+    payload = {"query": query}
     if variables:
-        json_payload["variables"] = variables
-    response = requests.post(url, json=json_payload, headers=headers)
-    response.raise_for_status()
-    return response.json()
+        payload["variables"] = variables
+    resp = requests.post(url, json=payload, headers=headers)
+    resp.raise_for_status()
+    result = resp.json()
+    print("[DEBUG] GraphQL response:", result)  # <-- debug
+    return result
 
 def get_repo_id(owner, repo, token):
     query = f"""
@@ -38,11 +37,15 @@ def get_owner_id(owner, token):
     """
     variables = {"login": owner}
     data = run_query(query, token, variables)
-    
+
+    if data is None:
+        raise Exception("GraphQL returned None; check token and login")
+
     if "errors" in data:
-        errors = [e for e in data["errors"] if e["type"] != "NOT_FOUND"]
-        if errors:
-            raise Exception(f"GraphQL error when fetching owner ID: {errors}")
+        # Ignore NOT_FOUND errors (we try user and org)
+        other_errors = [e for e in data["errors"] if e.get("type") != "NOT_FOUND"]
+        if other_errors:
+            raise Exception(f"GraphQL errors: {other_errors}")
 
     user_id = data.get("data", {}).get("user", {}).get("id")
     org_id = data.get("data", {}).get("organization", {}).get("id")
@@ -55,6 +58,7 @@ def get_owner_id(owner, token):
         return org_id
     else:
         raise Exception(f"Could not resolve owner ID for '{owner}'. Check spelling and token permissions.")
+
 
 
 def create_project(owner, title, token):
