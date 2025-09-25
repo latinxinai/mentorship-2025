@@ -107,17 +107,17 @@ def main():
     repo_id = get_repo_id(args.owner, args.repo, token)
 
     if args.action == "create-project":
-        project = create_project(repo_id, args.project_title, token)
-        print(f"Created project: {project['title']} (ID: {project['id']})")
+      project = create_project(args.owner, args.project_title, token)
+      print(f"Created project: {project['title']} (ID: {project['id']})")
 
     elif args.action == "generate-folders":
         if not args.pair_data:
             raise ValueError("You must provide --pair-data for generate-folders action")
 
-        project = create_project(repo_id, args.project_title, token)
+        project = create_project(args.owner, args.project_title, token)
         project_id = project["id"]
         print(f"Created project: {project['title']} (ID: {project_id})")
-
+        
         with open(args.pair_data, "r") as f:
             pairs = json.load(f)
 
