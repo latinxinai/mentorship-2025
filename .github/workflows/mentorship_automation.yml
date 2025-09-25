@@ -63,6 +63,7 @@ jobs:
       - name: Set up environment
         run: |
           chmod +x scripts/manage_mentorship_v2.py
+          chmod +x scripts/migrate_pairings_to_projects_v2.py
           chmod +x scripts/migrate_pairings_to_projects.py
           chmod +x scripts/process_mentorship_issue.py
 
@@ -93,7 +94,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          python scripts/migrate_pairings_to_projects.py \
+          python scripts/migrate_pairings_to_projects_v2.py \
             --pairings-path "${{ github.event.inputs.pairings_path }}" \
             --owner "$OWNER" \
             --repo "${{ github.event.repository.name }}" \
