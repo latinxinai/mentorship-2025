@@ -1,9 +1,6 @@
-import os
-import json
 import argparse
+import json
 import requests
-
-GITHUB_API = "https://api.github.com/graphql"
 
 def run_query(query, token, variables=None):
     url = "https://api.github.com/graphql"
@@ -11,22 +8,49 @@ def run_query(query, token, variables=None):
     payload = {"query": query}
     if variables:
         payload["variables"] = variables
-    resp = requests.post(url, json=payload, headers=headers)
-    resp.raise_for_status()
-    result = resp.json()
-    print("[DEBUG] GraphQL response:", result)  # <-- debug
+    response = requests.post(url, json=payload, headers=headers)
+    response.raise_for_status()
+    result = response.json()
+    print("[DEBUG] GraphQL response:", json.dumps(result, indent=2))
     return result
 
-def get_repo_id(owner, repo, token):
-    query = f"""
-    {{
-      repository(owner: "{owner}", name: "{repo}") {{
-        id
-      }}
-    }}
+def get_authenticated_user(token):
+    query = """
+    query {
+      viewer {
+        login
+      }
+    }
     """
     data = run_query(query, token)
-    return data["data"]["repository"]["id"]
+    return data.get("data", {}).get("viewer", {}).get("login")
+
+def get_repo_id(owner, repo, token):
+    query = """
+    query($owner: String!, $name: String!) {
+      repository(owner: $owner, name: $name) {
+        id
+      }
+    }
+    """
+    variables = {"owner": owner, "name": repo}
+    data = run_query(query, token, variables)
+
+    if data.get("data", {}).get("repository"):
+        return data["data"]["repository"]["id"]
+
+    # Repo not found under this owner
+    print(f"[WARNING] Repo '{repo}' not found under '{owner}'. Trying authenticated user...")
+    user = get_authenticated_user(token)
+    variables = {"owner": user, "name": repo}
+    data = run_query(query, token, variables)
+    repo_data = data.get("data", {}).get("repository")
+    if repo_data:
+        print(f"[INFO] Found repo '{repo}' under user '{user}'")
+        return repo_data["id"]
+    else:
+        errors = data.get("errors", [])
+        raise Exception(f"Repository not found under owner '{owner}' or user '{user}'. Errors: {errors}")
 
 def get_owner_id(owner, token):
     query = """
@@ -42,7 +66,7 @@ def get_owner_id(owner, token):
         raise Exception("GraphQL returned None; check token and login")
 
     if "errors" in data:
-        # Ignore NOT_FOUND errors (we try user and org)
+        # ignore NOT_FOUND
         other_errors = [e for e in data["errors"] if e.get("type") != "NOT_FOUND"]
         if other_errors:
             raise Exception(f"GraphQL errors: {other_errors}")
@@ -51,18 +75,18 @@ def get_owner_id(owner, token):
     org_id = data.get("data", {}).get("organization", {}).get("id")
 
     if user_id:
-        print(f"[DEBUG] Resolved owner '{owner}' as USER with ID {user_id}")
+        print(f"[INFO] Resolved owner '{owner}' as USER")
         return user_id
     elif org_id:
-        print(f"[DEBUG] Resolved owner '{owner}' as ORG with ID {org_id}")
+        print(f"[INFO] Resolved owner '{owner}' as ORG")
         return org_id
     else:
-        raise Exception(f"Could not resolve owner ID for '{owner}'. Check spelling and token permissions.")
-
-
+        # fallback to authenticated user
+        fallback = get_authenticated_user(token)
+        print(f"[WARNING] Could not resolve owner '{owner}', falling back to '{fallback}'")
+        return get_owner_id(fallback, token)
 
 def create_project(owner, title, token):
-    """Create a GitHub Projects V2 project under the given owner (user/org)."""
     owner_id = get_owner_id(owner, token)
     mutation = f"""
     mutation {{
@@ -83,69 +107,24 @@ def create_project(owner, title, token):
     project_v2 = data.get("data", {}).get("createProjectV2", {}).get("projectV2")
     if not project_v2:
         raise Exception(f"Failed to create project. Response: {data}")
+    print(f"[INFO] Created project '{project_v2['title']}' with ID {project_v2['id']}")
     return project_v2
-
-def create_item(project_id, title, token):
-    mutation = f"""
-    mutation {{
-      addProjectV2ItemById(input: {{
-        projectId: "{project_id}",
-        content: {{
-          title: "{title}"
-        }}
-      }}) {{
-        item {{
-          id
-        }}
-      }}
-    }}
-    """
-    run_query(mutation, token)
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--owner", required=True)
+    parser.add_argument("--owner", required=False, help="Owner (user/org) of the repo/project")
     parser.add_argument("--repo", required=True)
     parser.add_argument("--token", required=True)
     parser.add_argument("--project-title", required=True)
-    parser.add_argument(
-        "--pair-data",
-        required=False,
-        help="JSON file with mentor-mentee pairs"
-    )
-    parser.add_argument(
-        "--action",
-        choices=["create-project", "generate-folders"],
-        required=True,
-        help="Action to perform"
-    )
+    parser.add_argument("--action", choices=["create-project"], required=True)
     args = parser.parse_args()
 
     token = args.token
-    repo_id = get_repo_id(args.owner, args.repo, token)
+    owner = args.owner or get_authenticated_user(token)
+    repo_id = get_repo_id(owner, args.repo, token)
 
     if args.action == "create-project":
-      project = create_project(args.owner, args.project_title, token)
-      print(f"Created project: {project['title']} (ID: {project['id']})")
-
-    elif args.action == "generate-folders":
-        if not args.pair_data:
-            raise ValueError("You must provide --pair-data for generate-folders action")
-
-        project = create_project(args.owner, args.project_title, token)
-        project_id = project["id"]
-        print(f"Created project: {project['title']} (ID: {project_id})")
-        
-        with open(args.pair_data, "r") as f:
-            pairs = json.load(f)
-
-        for pair in pairs:
-            mentor = pair["mentor_email"]
-            mentee = pair["mentee_email"]
-            title = f"{mentor} → {mentee}"
-            create_item(project_id, title, token)
-
-        print(f"Added {len(pairs)} mentor-mentee items to project.")
+        project = create_project(owner, args.project_title, token)
 
 if __name__ == "__main__":
     main()
