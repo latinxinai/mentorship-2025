@@ -121,6 +121,7 @@ jobs:
           else
             git commit -m "Auto-generated mentorship pair folders"
             git push
+          fi
 
       - name: Create summary comment
         if: always() && github.event_name == 'workflow_dispatch'
