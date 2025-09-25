@@ -5,11 +5,17 @@ import requests
 
 GITHUB_API = "https://api.github.com/graphql"
 
-def run_query(query, token):
-    headers = {"Authorization": f"Bearer {token}"}
-    response = requests.post(GITHUB_API, json={"query": query}, headers=headers)
-    if response.status_code != 200:
-        raise Exception(f"Query failed: {response.status_code}, {response.text}")
+def run_query(query, token, variables=None):
+    """
+    Execute a GitHub GraphQL query.
+    """
+    url = "https://api.github.com/graphql"
+    headers = {"Authorization": f"bearer {token}"}
+    json_payload = {"query": query}
+    if variables:
+        json_payload["variables"] = variables
+    response = requests.post(url, json=json_payload, headers=headers)
+    response.raise_for_status()
     return response.json()
 
 def get_repo_id(owner, repo, token):
@@ -24,10 +30,6 @@ def get_repo_id(owner, repo, token):
     return data["data"]["repository"]["id"]
 
 def get_owner_id(owner, token):
-    """
-    Get the GraphQL ID of a GitHub user or organization.
-    Tries user first, then organization.
-    """
     query = """
     query($login: String!) {
       user(login: $login) { id }
@@ -36,9 +38,8 @@ def get_owner_id(owner, token):
     """
     variables = {"login": owner}
     data = run_query(query, token, variables)
-
+    
     if "errors" in data:
-        # Filter out NOT_FOUND errors
         errors = [e for e in data["errors"] if e["type"] != "NOT_FOUND"]
         if errors:
             raise Exception(f"GraphQL error when fetching owner ID: {errors}")
